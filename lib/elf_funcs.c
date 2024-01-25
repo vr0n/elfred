@@ -40,27 +40,27 @@ static char*
 get_phdr_type_from_int(int phdr) {
   switch(phdr) {
     case 0x01:
-      return "EHDR_LOAD        \0";
+      return "PT_LOAD        \0";
     case 0x02:
-      return "EHDR_DYNAMIC     \0";
+      return "PT_DYNAMIC     \0";
     case 0x03:
-      return "EHDR_INTERP      \0";
+      return "PT_INTERP      \0";
     case 0x04:
-      return "EHDR_NOTE        \0";
+      return "PT_NOTE        \0";
     case 0x05:
-      return "EHDR_NOTE        \0";
+      return "PT_NOTE        \0";
     case 0x06:
-      return "EHDR_PHDR        \0";
+      return "PT_PHDR        \0";
     case 0x06474e550:
-      return "EHDR_GNU_EH_FRAME\0";
+      return "PT_GNU_EH_FRAME\0";
     case 0x06474e551:
-      return "EHDR_GNU_STACK   \0";
+      return "PT_GNU_STACK   \0";
     case 0x06474e552:
-      return "EHDR_GNU_RELRO   \0";
+      return "PT_GNU_RELRO   \0";
     case 0x06474e553:
-      return "EHDR_GNU_PROPERTY\0";
+      return "PT_GNU_PROPERTY\0";
     default:
-      return "EHDR_UNKNOWN     \0";
+      return "PT_UNKNOWN     \0";
   }
 }
 
