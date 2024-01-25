@@ -14,54 +14,106 @@
 /*
  * Utilities
  */
-static char*
-get_phdr_perms_from_int(int perms) {
-  switch(perms) {
+int
+get_ehdr_type_from_int(int type, char* type_str) {
+  int len = 8;
+  switch(type) {
+    case 0:
+      memcpy(type_str, "ET_NONE\0", len);
+      break;
     case 1:
-      return "--X   \0";
+      memcpy(type_str, "ET_REL \0", len);
+      break;
     case 2:
-      return "-W-   \0";
+      memcpy(type_str, "ET_EXEC\0", len);
+      break;
     case 3:
-      return "-WX   \0";
+      memcpy(type_str, "ET_DYN \0", len);
+      break;
     case 4:
-      return "R--   \0";
-    case 5:
-      return "R-X   \0";
-    case 6:
-      return "RW-   \0";
-    case 7:
-      return "RWX   \0";
+      memcpy(type_str, "ET_CORE\0", len);
+      break;
     default:
-      return "UNKOWN\0";
+      memcpy(type_str, "UNKNOWN\0", len);
+      return -1;
   }
+
+  return 0;
 }
 
-static char*
-get_phdr_type_from_int(int phdr) {
+int
+get_phdr_perms_from_int(int perms, char* perms_str) {
+  int len = 8;
+  switch(perms) {
+    case 1:
+      memcpy(perms_str, "--X    \0", len);
+      break;
+    case 2:
+      memcpy(perms_str, "-W-    \0", len);
+      break;
+    case 3:
+      memcpy(perms_str, "-WX    \0", len);
+      break;
+    case 4:
+      memcpy(perms_str, "R--    \0", len);
+      break;
+    case 5:
+      memcpy(perms_str, "R-X    \0", len);
+      break;
+    case 6:
+      memcpy(perms_str, "RW-    \0", len);
+      break;
+    case 7:
+      memcpy(perms_str, "RWX    \0", len);
+      break;
+    default:
+      memcpy(perms_str, "UNKNOWN\0", len);
+      return -1;
+  }
+
+  return 0;
+}
+
+int
+get_phdr_type_from_int(int phdr, char* type_str) {
+  int len = 16;
   switch(phdr) {
     case 0x01:
-      return "PT_LOAD        \0";
+      memcpy(type_str, "PT_LOAD        \0", len);
+      break;
     case 0x02:
-      return "PT_DYNAMIC     \0";
+      memcpy(type_str, "PT_DYNAMIC     \0", len);
+      break;
     case 0x03:
-      return "PT_INTERP      \0";
+      memcpy(type_str, "PT_INTERP      \0", len);
+      break;
     case 0x04:
-      return "PT_NOTE        \0";
+      memcpy(type_str, "PT_NOTE        \0", len);
+      break;
     case 0x05:
-      return "PT_NOTE        \0";
+      memcpy(type_str, "PT_NOTE        \0", len);
+      break;
     case 0x06:
-      return "PT_PHDR        \0";
+      memcpy(type_str, "PT_PHDR        \0", len);
+      break;
     case 0x06474e550:
-      return "PT_GNU_EH_FRAME\0";
+      memcpy(type_str, "PT_GNU_EH_FRAME\0", len);
+      break;
     case 0x06474e551:
-      return "PT_GNU_STACK   \0";
+      memcpy(type_str, "PT_GNU_STACK   \0", len);
+      break;
     case 0x06474e552:
-      return "PT_GNU_RELRO   \0";
+      memcpy(type_str, "PT_GNU_RELRO   \0", len);
+      break;
     case 0x06474e553:
-      return "PT_GNU_PROPERTY\0";
+      memcpy(type_str, "PT_GNU_PROPERTY\0", len);
+      break;
     default:
-      return "PT_UNKNOWN     \0";
+      memcpy(type_str, "PT_UNKNOWN     \0", len);
+      return -1;
   }
+
+  return 0;
 }
 
 
@@ -426,6 +478,9 @@ set_phdr_offset(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Of
  */
 void
 print_elf_header(elf_bin_t* bin) {
+  char* ehdr_type = calloc(1, 256);
+  get_ehdr_type_from_int(bin->hdr->e_type, ehdr_type);
+
   printf("\nElf Header:\n");
   printf("===========================\n");
 
@@ -437,6 +492,16 @@ print_elf_header(elf_bin_t* bin) {
   printf("\nEntry: 0x%016llx\n", bin->hdr->e_entry);
 
   printf("\
+Header Size        Obj type     Obj version\n\
+%08d           %s      %08d\n",
+    bin->hdr->e_ehsize, ehdr_type, bin->hdr->e_version);
+
+  printf("\
+Machine            Proc flags   Strtab index\n\
+%08d           %08d     %08d\n",
+    bin->hdr->e_machine, bin->hdr->e_flags, bin->hdr->e_shstrndx);
+
+  printf("\
 Phdr offset        Phdr size    Phdr num\n\
 0x%016llx %08d     %08d\n",
     bin->hdr->e_phoff, bin->hdr->e_phentsize, bin->hdr->e_phnum);
@@ -446,43 +511,38 @@ Shdr offset        Shdr size    Shdr num\n\
 0x%016llx %08d     %08d\n",
     bin->hdr->e_shoff, bin->hdr->e_shentsize, bin->hdr->e_shnum);
 
-  printf("\
-Obj type           Obj version  Strtab index\n\
-%08d           %08d     %08d\n",
-    bin->hdr->e_type, bin->hdr->e_version, bin->hdr->e_shstrndx);
-
-  printf("\
-Header size        Machine    Proc flags\n\
-%08d           %08d     %08d\n",
-    bin->hdr->e_ehsize, bin->hdr->e_machine, bin->hdr->e_flags);
+  free(ehdr_type);
 }
 
 void
 print_program_headers(elf_bin_t* bin) {
   Elf64_Phdr* tmp_phdr = bin->phdr;
-  char* phdr_str = calloc(1, 1024);
-  char* perms_str = calloc(1, 1024);
+  char* phdr_str = calloc(1, 256);
+  char* perms_str = calloc(1, 256);
 
   printf("Elf program headers\n");
   printf("===========================\n");
 
   for (int i = 0; i < bin->hdr->e_phnum; i++) {
-    phdr_str = get_phdr_type_from_int(tmp_phdr->p_type);
-    perms_str = get_phdr_perms_from_int(tmp_phdr->p_flags);
+    get_phdr_type_from_int(tmp_phdr->p_type, phdr_str);
+    get_phdr_perms_from_int(tmp_phdr->p_flags, perms_str);
 
     printf("Phdr %d\n", i+1);
     puts("--------");
     printf("\
 Type               Perms              Offset             Vaddr\n\
-%s    %s             0x%016llx 0x%016llx\n\
+%s    %s            0x%016llx 0x%016llx\n\
 Paddr              Filesz             Memsz              Align\n\
 0x%016llx 0x%016llx 0x%016llx 0x%016llx\n\n",
     phdr_str, perms_str, tmp_phdr->p_offset, tmp_phdr->p_vaddr, tmp_phdr->p_paddr, tmp_phdr->p_filesz, tmp_phdr->p_memsz, tmp_phdr->p_align);
 
     tmp_phdr += sizeof(Elf64_Phdr);
-    phdr_str = NULL;
-    perms_str = NULL;
+    *phdr_str = '\0';
+    *perms_str = '\0';
   }
+
+  free(phdr_str);
+  free(perms_str);
 }
 
 void

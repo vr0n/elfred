@@ -95,8 +95,8 @@ typedef struct elf_bin {
 /*
  * Utilities
  */
-static char* get_phdr_type_from_int(int);
-static char* get_phdr_perms_from_int(int);
+int get_phdr_type_from_int(int, char*);
+int get_phdr_perms_from_int(int, char*);
 int dump_elf(unsigned char* file, long long len);
 /*
  * Parsers
