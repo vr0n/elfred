@@ -474,7 +474,7 @@ print_program_headers(elf_bin_t* bin) {
     puts("--------");
     printf("\
 Type               Perms              Offset             Vaddr\n\
-%s  %s             0x%016llx 0x%016llx\n\
+%s    %s             0x%016llx 0x%016llx\n\
 Paddr              Filesz             Memsz              Align\n\
 0x%016llx 0x%016llx 0x%016llx 0x%016llx\n\n",
     phdr_str, perms_str, tmp_phdr->p_offset, tmp_phdr->p_vaddr, tmp_phdr->p_paddr, tmp_phdr->p_filesz, tmp_phdr->p_memsz, tmp_phdr->p_align);

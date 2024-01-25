@@ -65,3 +65,53 @@ set_phdr_flags(elf, parsed_elf, 3, new_val);
 // the original elf that was parsed, in case you still need it
 dump_elf(elf);
 ```
+
+# Available Methods
+
+```
+/*
+ * Utilities
+ */
+static char* get_phdr_type_from_int(int);
+static char* get_phdr_perms_from_int(int);
+int dump_elf(unsigned char* file, long long len);
+/*
+ * Parsers
+ */
+int parse_section_headers(unsigned char*, elf_bin_t*);
+int parse_program_headers(unsigned char*, elf_bin_t*);
+int parse_header(unsigned char*, elf_bin_t*);
+int parse_sections(unsigned char*, elf_bin_t*);
+int parse_elf(unsigned char*, elf_bin_t*);
+/*
+ * Setters
+ */
+//hdr
+int set_hdr_type(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_machine(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_version(unsigned char* file, elf_bin_t* bin, Elf64_Word new_val);
+int set_hdr_entry(unsigned char* file, elf_bin_t* bin, Elf64_Addr new_val);
+int set_hdr_phoff(unsigned char* file, elf_bin_t* bin, Elf64_Off new_val);
+int set_hdr_shoff(unsigned char* file, elf_bin_t* bin, Elf64_Off new_val);
+int set_hdr_flags(unsigned char* file, elf_bin_t* bin, Elf64_Word new_val);
+int set_hdr_ehsize(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_phentsize(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_phnum(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_shentsize(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_shnum(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_shstrndx(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
+// phdrs
+int set_phdr_type(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Word new_val);
+int set_phdr_flags(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Word new_val);
+int set_phdr_offset(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Off new_val);
+int set_phdr_vaddr(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Addr new_val);
+int set_phdr_paddr(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Addr new_val);
+int set_phdr_filesz(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val);
+int set_phdr_memsz(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val);
+int set_phdr_align(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val);
+/*
+ * Printers
+ */
+void print_elf_header(elf_bin_t*);
+void print_program_headers(elf_bin_t*);
+```
