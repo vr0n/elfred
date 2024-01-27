@@ -11,6 +11,8 @@
 #include "elf_funcs.h"
 #include "utils.h"
 
+const char* OUT_NAME = "elf.out";
+
 /*
  * Utilities
  */
@@ -116,12 +118,36 @@ get_phdr_type_from_int(int phdr, char* type_str) {
   return 0;
 }
 
+elf_bin_t*
+open_elf(const char* target_file) {
+  struct stat stats;
+  if (0 != stat(target_file, &stats)) {
+    return NULL;
+  }
+
+  elf_bin_t* elf = malloc(sizeof(elf_bin_t));
+  if (NULL == elf) {
+    return NULL;
+  }
+
+  elf->size = stats.st_size;
+
+  FILE* fp = fopen(target_file, "r+b");
+  elf->bin = malloc(elf->size);
+  fread(elf->bin, elf->size, 1, fp);
+  fclose(fp);
+  
+  parse_elf(elf);
+  
+  return elf;
+}
 
 int
-dump_elf(unsigned char* file, long long len) {
-    FILE* output = fopen("./elf.out", "w");
+dump_elf(elf_bin_t* elf) {
+    FILE* output = fopen(OUT_NAME, "w");
+    unsigned long long len = 0;
 
-    if (len != fwrite(file, len, 1, output)) {
+    if (len != fwrite(elf->bin, elf->size, 1, output)) {
         fclose(output);
 
         return -1;
@@ -159,12 +185,12 @@ parse_sections(unsigned char* elf_file, elf_bin_t* bin)
 }
 
 int
-parse_elf(unsigned char* elf_file, elf_bin_t* bin)
+parse_elf(elf_bin_t* elf)
 {
-  parse_header(elf_file, bin);
-  parse_program_headers(elf_file, bin);
-  parse_section_headers(elf_file, bin);
-  parse_sections(elf_file, bin);
+  parse_header(elf->bin, elf);
+  parse_program_headers(elf->bin, elf);
+  parse_section_headers(elf->bin, elf);
+  parse_sections(elf->bin, elf);
 
   return 0;
 }
@@ -183,8 +209,6 @@ parse_program_headers(unsigned char* elf_file, elf_bin_t* bin) {
   unsigned short phnum = bin->hdr->e_phnum;
   bin->phdr = malloc(sizeof(Elf64_Phdr) * phnum);
   if (NULL == bin->phdr) {
-    log_err("Failed to allocate space for program headers");
-
     return -1;
   }
 
@@ -203,9 +227,9 @@ parse_program_headers(unsigned char* elf_file, elf_bin_t* bin) {
  * Setters
  */
 int
-set_hdr_type(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val) {
+set_hdr_type(elf_bin_t* elf, Elf64_Half new_val) {
     size_t offset = offsetof(Elf64_Ehdr, e_type);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -214,9 +238,9 @@ set_hdr_type(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val) {
 }
 
 int
-set_hdr_machine(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val) {
+set_hdr_machine(elf_bin_t* elf, Elf64_Half new_val) {
     size_t offset = offsetof(Elf64_Ehdr, e_machine);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -225,9 +249,9 @@ set_hdr_machine(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val) {
 }
 
 int
-set_hdr_version(unsigned char* file, elf_bin_t* bin, Elf64_Word new_val) {
+set_hdr_version(elf_bin_t* elf, Elf64_Word new_val) {
     size_t offset = offsetof(Elf64_Ehdr, e_version);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -236,9 +260,9 @@ set_hdr_version(unsigned char* file, elf_bin_t* bin, Elf64_Word new_val) {
 }
 
 int
-set_hdr_entry(unsigned char* file, elf_bin_t* bin, Elf64_Addr new_val) {
+set_hdr_entry(elf_bin_t* elf, Elf64_Addr new_val) {
     size_t offset = offsetof(Elf64_Ehdr, e_entry);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -247,9 +271,9 @@ set_hdr_entry(unsigned char* file, elf_bin_t* bin, Elf64_Addr new_val) {
 }
 
 int
-set_hdr_phoff(unsigned char* file, elf_bin_t* bin, Elf64_Off new_val) {
+set_hdr_phoff(elf_bin_t* elf, Elf64_Off new_val) {
     size_t offset = offsetof(Elf64_Ehdr, e_phoff);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -258,9 +282,9 @@ set_hdr_phoff(unsigned char* file, elf_bin_t* bin, Elf64_Off new_val) {
 }
 
 int
-set_hdr_shoff(unsigned char* file, elf_bin_t* bin, Elf64_Off new_val) {
+set_hdr_shoff(elf_bin_t* elf, Elf64_Off new_val) {
     size_t offset = offsetof(Elf64_Ehdr, e_shoff);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -269,9 +293,9 @@ set_hdr_shoff(unsigned char* file, elf_bin_t* bin, Elf64_Off new_val) {
 }
 
 int
-set_hdr_flags(unsigned char* file, elf_bin_t* bin, Elf64_Word new_val) {
+set_hdr_flags(elf_bin_t* elf, Elf64_Word new_val) {
     size_t offset = offsetof(Elf64_Ehdr, e_flags);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -280,9 +304,9 @@ set_hdr_flags(unsigned char* file, elf_bin_t* bin, Elf64_Word new_val) {
 }
 
 int
-set_hdr_ehsize(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val) {
+set_hdr_ehsize(elf_bin_t* elf, Elf64_Half new_val) {
     size_t offset = offsetof(Elf64_Ehdr, e_ehsize);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -291,9 +315,9 @@ set_hdr_ehsize(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val) {
 }
 
 int
-set_hdr_phentsize(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val) {
+set_hdr_phentsize(elf_bin_t* elf, Elf64_Half new_val) {
     size_t offset = offsetof(Elf64_Ehdr, e_phentsize);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -302,9 +326,9 @@ set_hdr_phentsize(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val) {
 }
 
 int
-set_hdr_phnum(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val) {
+set_hdr_phnum(elf_bin_t* elf, Elf64_Half new_val) {
     size_t offset = offsetof(Elf64_Ehdr, e_phnum);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -313,9 +337,9 @@ set_hdr_phnum(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val) {
 }
 
 int
-set_hdr_shentsize(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val) {
+set_hdr_shentsize(elf_bin_t* elf, Elf64_Half new_val) {
     size_t offset = offsetof(Elf64_Ehdr, e_shentsize);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -324,9 +348,9 @@ set_hdr_shentsize(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val) {
 }
 
 int
-set_hdr_shnum(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val) {
+set_hdr_shnum(elf_bin_t* elf, Elf64_Half new_val) {
     size_t offset = offsetof(Elf64_Ehdr, e_shnum);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -335,9 +359,9 @@ set_hdr_shnum(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val) {
 }
 
 int
-set_hdr_shstrndx(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val) {
+set_hdr_shstrndx(elf_bin_t* elf, Elf64_Half new_val) {
     size_t offset = offsetof(Elf64_Ehdr, e_shstrndx);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -346,14 +370,14 @@ set_hdr_shstrndx(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val) {
 }
 
 int
-set_phdr_align(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val) {
-    if (phdr-1 > bin->hdr->e_phnum) {
+set_phdr_align(elf_bin_t* elf, unsigned int phdr, Elf64_Xword new_val) {
+    if (phdr > elf->hdr->e_phnum) {
         return -1;
     }
-    unsigned long long offset = bin->hdr->e_phoff +
+    unsigned long long offset = elf->hdr->e_phoff +
         (sizeof(Elf64_Phdr) * (phdr-1)) +
         offsetof(Elf64_Phdr, p_align);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -362,14 +386,14 @@ set_phdr_align(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Xwo
 }
 
 int
-set_phdr_memsz(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val) {
-    if (phdr-1 > bin->hdr->e_phnum) {
+set_phdr_memsz(elf_bin_t* elf, unsigned int phdr, Elf64_Xword new_val) {
+    if (phdr > elf->hdr->e_phnum) {
         return -1;
     }
-    unsigned long long offset = bin->hdr->e_phoff +
+    unsigned long long offset = elf->hdr->e_phoff +
         (sizeof(Elf64_Phdr) * (phdr-1)) +
         offsetof(Elf64_Phdr, p_memsz);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -378,14 +402,14 @@ set_phdr_memsz(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Xwo
 }
 
 int
-set_phdr_filesz(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val) {
-    if (phdr-1 > bin->hdr->e_phnum) {
+set_phdr_filesz(elf_bin_t* elf, unsigned int phdr, Elf64_Xword new_val) {
+    if (phdr > elf->hdr->e_phnum) {
         return -1;
     }
-    unsigned long long offset = bin->hdr->e_phoff +
+    unsigned long long offset = elf->hdr->e_phoff +
         (sizeof(Elf64_Phdr) * (phdr-1)) +
         offsetof(Elf64_Phdr, p_filesz);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -394,14 +418,14 @@ set_phdr_filesz(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Xw
 }
 
 int
-set_phdr_paddr(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Addr new_val) {
-    if (phdr-1 > bin->hdr->e_phnum) {
+set_phdr_paddr(elf_bin_t* elf, unsigned int phdr, Elf64_Addr new_val) {
+    if (phdr > elf->hdr->e_phnum) {
         return -1;
     }
-    unsigned long long offset = bin->hdr->e_phoff +
+    unsigned long long offset = elf->hdr->e_phoff +
         (sizeof(Elf64_Phdr) * (phdr-1)) +
         offsetof(Elf64_Phdr, p_paddr);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -410,14 +434,14 @@ set_phdr_paddr(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Add
 }
 
 int
-set_phdr_vaddr(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Addr new_val) {
-    if (phdr-1 > bin->hdr->e_phnum) {
+set_phdr_vaddr(elf_bin_t* elf, unsigned int phdr, Elf64_Addr new_val) {
+    if (phdr > elf->hdr->e_phnum) {
         return -1;
     }
-    unsigned long long offset = bin->hdr->e_phoff +
+    unsigned long long offset = elf->hdr->e_phoff +
         (sizeof(Elf64_Phdr) * (phdr-1)) +
         offsetof(Elf64_Phdr, p_vaddr);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -426,14 +450,14 @@ set_phdr_vaddr(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Add
 }
 
 int
-set_phdr_flags(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Word new_val) {
-    if (phdr-1 > bin->hdr->e_phnum) {
+set_phdr_flags(elf_bin_t* elf, unsigned int phdr, Elf64_Word new_val) {
+    if (phdr > elf->hdr->e_phnum) {
         return -1;
     }
-    unsigned long long offset = bin->hdr->e_phoff +
+    unsigned long long offset = elf->hdr->e_phoff +
         (sizeof(Elf64_Phdr) * (phdr-1)) +
         offsetof(Elf64_Phdr, p_flags);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -442,14 +466,14 @@ set_phdr_flags(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Wor
 }
 
 int
-set_phdr_type(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Word new_val) {
-    if (phdr-1 > bin->hdr->e_phnum) {
+set_phdr_type(elf_bin_t* elf, unsigned int phdr, Elf64_Word new_val) {
+    if (phdr > elf->hdr->e_phnum) {
         return -1;
     }
-    unsigned long long offset = bin->hdr->e_phoff +
+    unsigned long long offset = elf->hdr->e_phoff +
         (sizeof(Elf64_Phdr) * (phdr-1)) +
         offsetof(Elf64_Phdr, p_type);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));
@@ -458,14 +482,14 @@ set_phdr_type(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Word
 }
 
 int
-set_phdr_offset(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Off new_val) {
-    if (phdr-1 > bin->hdr->e_phnum) {
+set_phdr_offset(elf_bin_t* elf, unsigned int phdr, Elf64_Off new_val) {
+    if (phdr > elf->hdr->e_phnum) {
         return -1;
     }
-    unsigned long long offset = bin->hdr->e_phoff +
+    unsigned long long offset = elf->hdr->e_phoff +
         (sizeof(Elf64_Phdr) * (phdr-1)) +
         offsetof(Elf64_Phdr, p_offset);
-    unsigned char* tmp_file = file;
+    unsigned char* tmp_file = elf->bin;
 
     tmp_file += offset;
     memcpy(tmp_file, &new_val, sizeof(new_val));

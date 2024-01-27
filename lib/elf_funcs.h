@@ -92,9 +92,10 @@ typedef struct elf_bin {
   Elf64_Sec* sec;
   unsigned int seg_num;
   Elf64_Seg* seg;
-  unsigned long size;
   unsigned long perms;
   char* perms_chr;
+  unsigned long long size;
+  unsigned char* bin;
 } elf_bin_t;
 
 /*
@@ -102,7 +103,8 @@ typedef struct elf_bin {
  */
 int get_phdr_type_from_int(int, char*);
 int get_phdr_perms_from_int(int, char*);
-int dump_elf(unsigned char* file, long long len);
+int dump_elf(elf_bin_t* elf);
+elf_bin_t* open_elf(const char* target_elf);
 /*
  * Parsers
  */
@@ -110,33 +112,33 @@ int parse_section_headers(unsigned char*, elf_bin_t*);
 int parse_program_headers(unsigned char*, elf_bin_t*);
 int parse_header(unsigned char*, elf_bin_t*);
 int parse_sections(unsigned char*, elf_bin_t*);
-int parse_elf(unsigned char*, elf_bin_t*);
+int parse_elf(elf_bin_t* elf);
 /*
  * Setters
  */
 //hdr
-int set_hdr_type(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_machine(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_version(unsigned char* file, elf_bin_t* bin, Elf64_Word new_val);
-int set_hdr_entry(unsigned char* file, elf_bin_t* bin, Elf64_Addr new_val);
-int set_hdr_phoff(unsigned char* file, elf_bin_t* bin, Elf64_Off new_val);
-int set_hdr_shoff(unsigned char* file, elf_bin_t* bin, Elf64_Off new_val);
-int set_hdr_flags(unsigned char* file, elf_bin_t* bin, Elf64_Word new_val);
-int set_hdr_ehsize(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_phentsize(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_phnum(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_shentsize(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_shnum(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_shstrndx(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_type(elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_machine(elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_version(elf_bin_t* bin, Elf64_Word new_val);
+int set_hdr_entry(elf_bin_t* bin, Elf64_Addr new_val);
+int set_hdr_phoff(elf_bin_t* bin, Elf64_Off new_val);
+int set_hdr_shoff(elf_bin_t* bin, Elf64_Off new_val);
+int set_hdr_flags(elf_bin_t* bin, Elf64_Word new_val);
+int set_hdr_ehsize(elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_phentsize(elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_phnum(elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_shentsize(elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_shnum(elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_shstrndx(elf_bin_t* bin, Elf64_Half new_val);
 // phdrs
-int set_phdr_type(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Word new_val);
-int set_phdr_flags(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Word new_val);
-int set_phdr_offset(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Off new_val);
-int set_phdr_vaddr(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Addr new_val);
-int set_phdr_paddr(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Addr new_val);
-int set_phdr_filesz(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val);
-int set_phdr_memsz(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val);
-int set_phdr_align(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val);
+int set_phdr_type(elf_bin_t* bin, unsigned int phdr, Elf64_Word new_val);
+int set_phdr_flags(elf_bin_t* bin, unsigned int phdr, Elf64_Word new_val);
+int set_phdr_offset(elf_bin_t* elf, unsigned int phdr, Elf64_Off new_val);
+int set_phdr_vaddr(elf_bin_t* bin, unsigned int phdr, Elf64_Addr new_val);
+int set_phdr_paddr(elf_bin_t* bin, unsigned int phdr, Elf64_Addr new_val);
+int set_phdr_filesz(elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val);
+int set_phdr_memsz(elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val);
+int set_phdr_align(elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val);
 /*
  * Printers
  */
