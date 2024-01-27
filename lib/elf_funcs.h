@@ -3,17 +3,22 @@
 #define EHDR_64_SIZE 64
 #define EHDR_SIZE    64 // Assume 64-bit for now
 
+#define ET_NONE 0x00
+#define ET_REL  0x01
+#define ET_EXEC 0x02
+#define ET_DYN  0x03
+#define ET_CORE 0x04
+
 #define PT_LOAD         0x01
 #define PT_DYNAMIC      0x02
 #define PT_INTERP       0x03
 #define PT_NOTE         0x04
-#define PT_NOTE_BACKUP  0x05
+#define PT_SHLIB        0x05
 #define PT_PHDR         0x06
 #define PT_GNU_EH_FRAME 0x6474e550
 #define PT_GNU_STACK    0x6474e551
 #define PT_GNU_RELRO    0x6474e552
 #define PT_GNU_PROPERTY 0x6474e553
-#define PT_UNKNOWN      NULL
 
 typedef unsigned long long Elf64_Addr;  // 8 bytes
 typedef unsigned short Elf64_Half;      // 2 bytes
@@ -55,7 +60,7 @@ typedef struct {
   Elf64_Addr  p_paddr;  // 8 bytes: For physical addressing systems
   Elf64_Xword p_filesz; // 8 bytes: File image size of this segment
   Elf64_Xword p_memsz;  // 8 bytes: Memory image size of this segment
-  Elf64_Xword p_align;  // 8 bytes: Alginment constraint of this segment
+  Elf64_Xword p_align;  // 8 bytes: Alignment constraint of this segment
 } Elf64_Phdr; // 56 bytes
 
 typedef struct {

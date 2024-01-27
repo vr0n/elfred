@@ -18,19 +18,19 @@ int
 get_ehdr_type_from_int(int type, char* type_str) {
   int len = 8;
   switch(type) {
-    case 0:
+    case ET_NONE:
       memcpy(type_str, "ET_NONE\0", len);
       break;
-    case 1:
+    case ET_REL:
       memcpy(type_str, "ET_REL \0", len);
       break;
-    case 2:
+    case ET_EXEC:
       memcpy(type_str, "ET_EXEC\0", len);
       break;
-    case 3:
+    case ET_DYN:
       memcpy(type_str, "ET_DYN \0", len);
       break;
-    case 4:
+    case ET_CORE:
       memcpy(type_str, "ET_CORE\0", len);
       break;
     default:
@@ -78,34 +78,34 @@ int
 get_phdr_type_from_int(int phdr, char* type_str) {
   int len = 16;
   switch(phdr) {
-    case 0x01:
+    case PT_LOAD:
       memcpy(type_str, "PT_LOAD        \0", len);
       break;
-    case 0x02:
+    case PT_DYNAMIC:
       memcpy(type_str, "PT_DYNAMIC     \0", len);
       break;
-    case 0x03:
+    case PT_INTERP:
       memcpy(type_str, "PT_INTERP      \0", len);
       break;
-    case 0x04:
+    case PT_NOTE:
       memcpy(type_str, "PT_NOTE        \0", len);
       break;
-    case 0x05:
-      memcpy(type_str, "PT_NOTE        \0", len);
+    case PT_SHLIB:
+      memcpy(type_str, "PT_SHLIB       \0", len);
       break;
-    case 0x06:
+    case PT_PHDR:
       memcpy(type_str, "PT_PHDR        \0", len);
       break;
-    case 0x06474e550:
+    case PT_GNU_EH_FRAME:
       memcpy(type_str, "PT_GNU_EH_FRAME\0", len);
       break;
-    case 0x06474e551:
+    case PT_GNU_STACK:
       memcpy(type_str, "PT_GNU_STACK   \0", len);
       break;
-    case 0x06474e552:
+    case PT_GNU_RELRO:
       memcpy(type_str, "PT_GNU_RELRO   \0", len);
       break;
-    case 0x06474e553:
+    case PT_GNU_PROPERTY:
       memcpy(type_str, "PT_GNU_PROPERTY\0", len);
       break;
     default:
