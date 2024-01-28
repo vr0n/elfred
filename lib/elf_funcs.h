@@ -9,6 +9,7 @@
 #define ET_DYN  0x03
 #define ET_CORE 0x04
 
+#define PT_NULL         0x00
 #define PT_LOAD         0x01
 #define PT_DYNAMIC      0x02
 #define PT_INTERP       0x03
@@ -19,6 +20,19 @@
 #define PT_GNU_STACK    0x6474e551
 #define PT_GNU_RELRO    0x6474e552
 #define PT_GNU_PROPERTY 0x6474e553
+
+#define SHT_NULL     0x00
+#define SHT_PROGBITS 0x01
+#define SHT_SYMTAB   0x02
+#define SHT_STRTAB   0x03
+#define SHT_RELA     0x04
+#define SHT_HASH     0x05
+#define SHT_DYNAMIC  0x06
+#define SHT_NOTE     0x07
+#define SHT_NOBITS   0x08
+#define SHT_REL      0x09
+#define SHT_SHLIB    0x0a
+#define SHT_DYNSYM   0x0b
 
 typedef unsigned long long Elf64_Addr;  // 8 bytes
 typedef unsigned short Elf64_Half;      // 2 bytes
@@ -144,3 +158,4 @@ int set_phdr_align(elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val);
  */
 void print_elf_header(elf_bin_t*);
 void print_program_headers(elf_bin_t*);
+void print_section_headers(elf_bin_t*);

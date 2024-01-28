@@ -162,23 +162,6 @@ dump_elf(elf_bin_t* elf) {
  * Parsers
  */
 int
-parse_section_headers(unsigned char* elf_file, elf_bin_t* bin)
-{
-  unsigned short shnum = bin->hdr->e_shnum;
-  bin->shdr = malloc(sizeof(Elf64_Shdr) * shnum);
-
-  unsigned char* tmp_file = elf_file;
-  tmp_file = tmp_file + bin->hdr->e_shoff;
-
-  for (int i = 0; i < shnum; i++) {
-    memcpy(bin->shdr + (sizeof(Elf64_Shdr) * 1), tmp_file, sizeof(Elf64_Shdr));
-    tmp_file = tmp_file + sizeof(Elf64_Shdr);
-  }
-
-  return 0;
-}
-
-int
 parse_sections(unsigned char* elf_file, elf_bin_t* bin)
 {
   return 0;
@@ -207,7 +190,7 @@ parse_header(unsigned char* elf_file, elf_bin_t* bin)
 int 
 parse_program_headers(unsigned char* elf_file, elf_bin_t* bin) {
   unsigned short phnum = bin->hdr->e_phnum;
-  bin->phdr = malloc(sizeof(Elf64_Phdr) * phnum);
+  bin->phdr = (Elf64_Phdr*)malloc(sizeof(Elf64_Phdr) * phnum);
   if (NULL == bin->phdr) {
     return -1;
   }
@@ -216,8 +199,25 @@ parse_program_headers(unsigned char* elf_file, elf_bin_t* bin) {
   tmp_file = tmp_file + bin->hdr->e_phoff; // Get to program header offset
 
   for (int i = 0; i < phnum; i++) {
-    memcpy(bin->phdr + (sizeof(Elf64_Phdr) * i), tmp_file, sizeof(Elf64_Phdr));
+    memcpy(bin->phdr + i, tmp_file, sizeof(Elf64_Phdr));
     tmp_file = tmp_file + sizeof(Elf64_Phdr);
+  }
+
+  return 0;
+}
+
+int
+parse_section_headers(unsigned char* elf_file, elf_bin_t* bin)
+{
+  unsigned short shnum = bin->hdr->e_shnum;
+  bin->shdr = (Elf64_Shdr*)malloc(sizeof(Elf64_Shdr) * shnum);
+
+  unsigned char* tmp_file = elf_file;
+  tmp_file = tmp_file + bin->hdr->e_shoff;
+
+  for (int i = 0; i < shnum; i++) {
+    memcpy(bin->shdr + i, tmp_file, sizeof(Elf64_Shdr));
+    tmp_file = tmp_file + sizeof(Elf64_Shdr);
   }
 
   return 0;
@@ -571,4 +571,22 @@ Paddr              Filesz             Memsz              Align\n\
 
 void
 print_section_headers(elf_bin_t* bin) {
+  Elf64_Shdr* tmp_shdr = bin->shdr;
+
+  printf("Elf section headers\n");
+  printf("===========================\n");
+
+  for (int i = 0; i < bin->hdr->e_shnum; i++) {
+    printf("Shdr %d\n", i+1);
+    puts("--------");
+    printf("\
+Addr: 0x%016llx\n\
+Offset: 0x%016llx\n\
+Name    Type    Flags    Size\n\
+%d      %d      %llu       %llu\n\
+Link    Info    Addralign    Entry size\n\
+%d      %d      %llu           %llu\n",
+     tmp_shdr->sh_addr, tmp_shdr->sh_offset, tmp_shdr->sh_name, tmp_shdr->sh_type, tmp_shdr->sh_flags, tmp_shdr->sh_size, tmp_shdr->sh_link, tmp_shdr->sh_info, tmp_shdr->sh_addralign, tmp_shdr->sh_entsize);
+    tmp_shdr += sizeof(Elf64_Shdr);
+  }
 }
