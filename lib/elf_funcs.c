@@ -544,8 +544,8 @@ print_program_headers(elf_bin_t* bin) {
   char* phdr_str = calloc(1, 256);
   char* perms_str = calloc(1, 256);
 
-  printf("Elf program headers\n");
-  printf("===========================\n");
+  puts("Elf program headers");
+  puts("===========================");
 
   for (int i = 0; i < bin->hdr->e_phnum; i++) {
     get_phdr_type_from_int(tmp_phdr->p_type, phdr_str);
@@ -560,7 +560,7 @@ Paddr              Filesz             Memsz              Align\n\
 0x%016llx 0x%016llx 0x%016llx 0x%016llx\n\n",
     phdr_str, perms_str, tmp_phdr->p_offset, tmp_phdr->p_vaddr, tmp_phdr->p_paddr, tmp_phdr->p_filesz, tmp_phdr->p_memsz, tmp_phdr->p_align);
 
-    tmp_phdr += sizeof(Elf64_Phdr);
+    tmp_phdr++;
     *phdr_str = '\0';
     *perms_str = '\0';
   }
@@ -573,20 +573,20 @@ void
 print_section_headers(elf_bin_t* bin) {
   Elf64_Shdr* tmp_shdr = bin->shdr;
 
-  printf("Elf section headers\n");
-  printf("===========================\n");
+  puts("Elf section headers");
+  puts("===========================");
 
   for (int i = 0; i < bin->hdr->e_shnum; i++) {
     printf("Shdr %d\n", i+1);
     puts("--------");
     printf("\
-Addr: 0x%016llx\n\
+Addr:   0x%016llx\n\
 Offset: 0x%016llx\n\
-Name    Type    Flags    Size\n\
-%d      %d      %llu       %llu\n\
-Link    Info    Addralign    Entry size\n\
-%d      %d      %llu           %llu\n",
+Name     Type     Flags            Size\n\
+%08d %08d %016llu %016llu\n\
+Link     Info     Addralign        Entry size\n\
+%08d %08d %016llu %016llu\n",
      tmp_shdr->sh_addr, tmp_shdr->sh_offset, tmp_shdr->sh_name, tmp_shdr->sh_type, tmp_shdr->sh_flags, tmp_shdr->sh_size, tmp_shdr->sh_link, tmp_shdr->sh_info, tmp_shdr->sh_addralign, tmp_shdr->sh_entsize);
-    tmp_shdr += sizeof(Elf64_Shdr);
+    tmp_shdr++;
   }
 }
