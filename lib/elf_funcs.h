@@ -115,44 +115,55 @@ typedef struct elf_bin {
 /*
  * Utilities
  */
-int get_phdr_type_from_int(int, char*);
-int get_phdr_perms_from_int(int, char*);
+int get_ehdr_type(int, char*); int get_phdr_type(int, char*);
+int get_phdr_perms(int, char*);
 int dump_elf(elf_bin_t* elf);
 elf_bin_t* open_elf(const char* target_elf);
 /*
  * Parsers
  */
-int parse_section_headers(unsigned char*, elf_bin_t*);
-int parse_program_headers(unsigned char*, elf_bin_t*);
-int parse_header(unsigned char*, elf_bin_t*);
-int parse_sections(unsigned char*, elf_bin_t*);
-int parse_elf(elf_bin_t* elf);
+static int parse_section_headers(elf_bin_t* elf);
+static int parse_program_headers(elf_bin_t* elf);
+static int parse_header(elf_bin_t*);
+static int parse_sections(elf_bin_t*);
+static int parse_elf(elf_bin_t* elf);
 /*
  * Setters
  */
 //hdr
-int set_hdr_type(elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_machine(elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_version(elf_bin_t* bin, Elf64_Word new_val);
-int set_hdr_entry(elf_bin_t* bin, Elf64_Addr new_val);
-int set_hdr_phoff(elf_bin_t* bin, Elf64_Off new_val);
-int set_hdr_shoff(elf_bin_t* bin, Elf64_Off new_val);
-int set_hdr_flags(elf_bin_t* bin, Elf64_Word new_val);
-int set_hdr_ehsize(elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_phentsize(elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_phnum(elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_shentsize(elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_shnum(elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_shstrndx(elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_type(elf_bin_t* elf, Elf64_Half new_val);
+int set_hdr_machine(elf_bin_t* elf, Elf64_Half new_val);
+int set_hdr_version(elf_bin_t* elf, Elf64_Word new_val);
+int set_hdr_entry(elf_bin_t* elf, Elf64_Addr new_val);
+int set_hdr_phoff(elf_bin_t* elf, Elf64_Off new_val);
+int set_hdr_shoff(elf_bin_t* elf, Elf64_Off new_val);
+int set_hdr_flags(elf_bin_t* elf, Elf64_Word new_val);
+int set_hdr_ehsize(elf_bin_t* elf, Elf64_Half new_val);
+int set_hdr_phentsize(elf_bin_t* elf, Elf64_Half new_val);
+int set_hdr_phnum(elf_bin_t* elf, Elf64_Half new_val);
+int set_hdr_shentsize(elf_bin_t* elf, Elf64_Half new_val);
+int set_hdr_shnum(elf_bin_t* elf, Elf64_Half new_val);
+int set_hdr_shstrndx(elf_bin_t* elf, Elf64_Half new_val);
 // phdrs
-int set_phdr_type(elf_bin_t* bin, unsigned int phdr, Elf64_Word new_val);
-int set_phdr_flags(elf_bin_t* bin, unsigned int phdr, Elf64_Word new_val);
+int set_phdr_type(elf_bin_t* elf, unsigned int phdr, Elf64_Word new_val);
+int set_phdr_flags(elf_bin_t* elf, unsigned int phdr, Elf64_Word new_val);
 int set_phdr_offset(elf_bin_t* elf, unsigned int phdr, Elf64_Off new_val);
-int set_phdr_vaddr(elf_bin_t* bin, unsigned int phdr, Elf64_Addr new_val);
-int set_phdr_paddr(elf_bin_t* bin, unsigned int phdr, Elf64_Addr new_val);
-int set_phdr_filesz(elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val);
-int set_phdr_memsz(elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val);
-int set_phdr_align(elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val);
+int set_phdr_vaddr(elf_bin_t* elf, unsigned int phdr, Elf64_Addr new_val);
+int set_phdr_paddr(elf_bin_t* elf, unsigned int phdr, Elf64_Addr new_val);
+int set_phdr_filesz(elf_bin_t* elf, unsigned int phdr, Elf64_Xword new_val);
+int set_phdr_memsz(elf_bin_t* elf, unsigned int phdr, Elf64_Xword new_val);
+int set_phdr_align(elf_bin_t* elf, unsigned int phdr, Elf64_Xword new_val);
+//shdrs 
+int set_shdr_name(elf_bin_t* elf, unsigned int shdr, Elf64_Word new_val);
+int set_shdr_type(elf_bin_t* elf, unsigned int shdr, Elf64_Word new_val);
+int set_shdr_flags(elf_bin_t* elf, unsigned int shdr, Elf64_Xword new_val);
+int set_shdr_addr(elf_bin_t* elf, unsigned int shdr, Elf64_Addr new_val);
+int set_shdr_offset(elf_bin_t* elf, unsigned int shdr, Elf64_Off new_val);
+int set_shdr_size(elf_bin_t* elf, unsigned int shdr, Elf64_Xword new_val);
+int set_shdr_link(elf_bin_t* elf, unsigned int shdr, Elf64_Word new_val);
+int set_shdr_info(elf_bin_t* elf, unsigned int shdr, Elf64_Word new_val);
+int set_shdr_addralign(elf_bin_t* elf, unsigned int shdr, Elf64_Xword new_val);
+int set_shdr_entsize(elf_bin_t* elf, unsigned int shdr, Elf64_Xword new_val);
 /*
  * Printers
  */

@@ -17,7 +17,54 @@ const char* OUT_NAME = "elf.out";
  * Utilities
  */
 int
-get_ehdr_type_from_int(int type, char* type_str) {
+get_shdr_type(int type, char* type_str) {
+  int len = 13;
+  switch(type) {
+    case SHT_NULL:
+      memcpy(type_str, "SHT_NULL    \0", len);
+      break;
+    case SHT_PROGBITS:
+      memcpy(type_str, "SHT_PROGBITS\0", len);
+      break;
+    case SHT_SYMTAB:
+      memcpy(type_str, "SHT_SYMTAB  \0", len);
+      break;
+    case SHT_STRTAB:
+      memcpy(type_str, "SHT_STRTAB  \0", len);
+      break;
+    case SHT_RELA:
+      memcpy(type_str, "SHT_RELA    \0", len);
+      break;
+    case SHT_HASH:
+      memcpy(type_str, "SHT_HASH    \0", len);
+      break;
+    case SHT_DYNAMIC:
+      memcpy(type_str, "SHT_DYNAMIC \0", len);
+      break;
+    case SHT_NOTE:
+      memcpy(type_str, "SHT_NOTE    \0", len);
+      break;
+    case SHT_NOBITS:
+      memcpy(type_str, "SHT_NOBITS  \0", len);
+      break;
+    case SHT_REL:
+      memcpy(type_str, "SHT_REL     \0", len);
+      break;
+    case SHT_SHLIB:
+      memcpy(type_str, "SHT_SHLIB   \0", len);
+      break;
+    case SHT_DYNSYM:
+      memcpy(type_str, "SHT_DYNSYM  \0", len);
+      break;
+    default:
+      memcpy(type_str, "UNKNOWN     \0", len);
+      return -1;
+  }
+  return 0;
+}
+
+int
+get_ehdr_type(int type, char* type_str) {
   int len = 8;
   switch(type) {
     case ET_NONE:
@@ -44,7 +91,7 @@ get_ehdr_type_from_int(int type, char* type_str) {
 }
 
 int
-get_phdr_perms_from_int(int perms, char* perms_str) {
+get_phdr_perms(int perms, char* perms_str) {
   int len = 8;
   switch(perms) {
     case 1:
@@ -77,7 +124,7 @@ get_phdr_perms_from_int(int perms, char* perms_str) {
 }
 
 int
-get_phdr_type_from_int(int phdr, char* type_str) {
+get_phdr_type(int phdr, char* type_str) {
   int len = 16;
   switch(phdr) {
     case PT_LOAD:
@@ -161,62 +208,63 @@ dump_elf(elf_bin_t* elf) {
 /*
  * Parsers
  */
-int
-parse_sections(unsigned char* elf_file, elf_bin_t* bin)
+static int
+parse_sections(elf_bin_t* bin)
 {
   return 0;
 }
 
-int
+static int
 parse_elf(elf_bin_t* elf)
 {
-  parse_header(elf->bin, elf);
-  parse_program_headers(elf->bin, elf);
-  parse_section_headers(elf->bin, elf);
-  parse_sections(elf->bin, elf);
+  parse_header(elf);
+  parse_program_headers(elf);
+  parse_section_headers(elf);
+  parse_sections(elf);
 
   return 0;
 }
 
-int
-parse_header(unsigned char* elf_file, elf_bin_t* bin)
+static int
+parse_header(elf_bin_t* elf)
 {
-  bin->hdr = malloc(sizeof(Elf64_Ehdr));
-  memcpy(bin->hdr, elf_file, EHDR_SIZE);
+  elf->hdr = malloc(sizeof(Elf64_Ehdr));
+  memcpy(elf->hdr, elf->bin, EHDR_SIZE);
 
   return 0;
 }
 
+static
 int 
-parse_program_headers(unsigned char* elf_file, elf_bin_t* bin) {
-  unsigned short phnum = bin->hdr->e_phnum;
-  bin->phdr = (Elf64_Phdr*)malloc(sizeof(Elf64_Phdr) * phnum);
-  if (NULL == bin->phdr) {
+parse_program_headers(elf_bin_t* elf) {
+  unsigned short phnum = elf->hdr->e_phnum;
+  elf->phdr = (Elf64_Phdr*)malloc(sizeof(Elf64_Phdr) * phnum);
+  if (NULL == elf->phdr) {
     return -1;
   }
 
-  unsigned char* tmp_file = elf_file;
-  tmp_file = tmp_file + bin->hdr->e_phoff; // Get to program header offset
+  unsigned char* tmp_file = elf->bin;
+  tmp_file = tmp_file + elf->hdr->e_phoff; // Get to program header offset
 
   for (int i = 0; i < phnum; i++) {
-    memcpy(bin->phdr + i, tmp_file, sizeof(Elf64_Phdr));
+    memcpy(elf->phdr + i, tmp_file, sizeof(Elf64_Phdr));
     tmp_file = tmp_file + sizeof(Elf64_Phdr);
   }
 
   return 0;
 }
 
-int
-parse_section_headers(unsigned char* elf_file, elf_bin_t* bin)
+static int
+parse_section_headers(elf_bin_t* elf)
 {
-  unsigned short shnum = bin->hdr->e_shnum;
-  bin->shdr = (Elf64_Shdr*)malloc(sizeof(Elf64_Shdr) * shnum);
+  unsigned short shnum = elf->hdr->e_shnum;
+  elf->shdr = (Elf64_Shdr*)malloc(sizeof(Elf64_Shdr) * shnum);
 
-  unsigned char* tmp_file = elf_file;
-  tmp_file = tmp_file + bin->hdr->e_shoff;
+  unsigned char* tmp_file = elf->bin;
+  tmp_file = tmp_file + elf->hdr->e_shoff;
 
   for (int i = 0; i < shnum; i++) {
-    memcpy(bin->shdr + i, tmp_file, sizeof(Elf64_Shdr));
+    memcpy(elf->shdr + i, tmp_file, sizeof(Elf64_Shdr));
     tmp_file = tmp_file + sizeof(Elf64_Shdr);
   }
 
@@ -497,13 +545,173 @@ set_phdr_offset(elf_bin_t* elf, unsigned int phdr, Elf64_Off new_val) {
     return 0;
 }
 
+int
+set_shdr_name(elf_bin_t* elf, unsigned int shdr, Elf64_Word new_val) {
+  if (shdr > elf->hdr->e_shnum) {
+    return -1;
+  }
+  unsigned long long offset = elf->hdr->e_shoff +
+    (sizeof(Elf64_Shdr) * (shdr-1)) +
+    offsetof(Elf64_Shdr, sh_name);
+  unsigned char* tmp_file = elf->bin;
+
+  tmp_file += offset;
+  memcpy(tmp_file, &new_val, sizeof(new_val));
+  
+  return 0;
+}
+
+int
+set_shdr_type(elf_bin_t* elf, unsigned int shdr, Elf64_Word new_val) {
+  if (shdr > elf->hdr->e_shnum) {
+    return -1;
+  }
+  unsigned long long offset = elf->hdr->e_shoff +
+    (sizeof(Elf64_Shdr) * (shdr-1)) +
+    offsetof(Elf64_Shdr, sh_type);
+  unsigned char* tmp_file = elf->bin;
+
+  tmp_file += offset;
+  memcpy(tmp_file, &new_val, sizeof(new_val));
+  
+  return 0;
+}
+
+int
+set_shdr_flags(elf_bin_t* elf, unsigned int shdr, Elf64_Xword new_val) {
+  if (shdr > elf->hdr->e_shnum) {
+    return -1;
+  }
+  unsigned long long offset = elf->hdr->e_shoff +
+    (sizeof(Elf64_Shdr) * (shdr-1)) +
+    offsetof(Elf64_Shdr, sh_flags);
+  unsigned char* tmp_file = elf->bin;
+
+  tmp_file += offset;
+  memcpy(tmp_file, &new_val, sizeof(new_val));
+  
+  return 0;
+}
+
+int
+set_shdr_addr(elf_bin_t* elf, unsigned int shdr, Elf64_Addr new_val) {
+  if (shdr > elf->hdr->e_shnum) {
+    return -1;
+  }
+  unsigned long long offset = elf->hdr->e_shoff +
+    (sizeof(Elf64_Shdr) * (shdr-1)) +
+    offsetof(Elf64_Shdr, sh_addr);
+  unsigned char* tmp_file = elf->bin;
+
+  tmp_file += offset;
+  memcpy(tmp_file, &new_val, sizeof(new_val));
+  
+  return 0;
+}
+
+int
+set_shdr_offset(elf_bin_t* elf, unsigned int shdr, Elf64_Off new_val) {
+  if (shdr > elf->hdr->e_shnum) {
+    return -1;
+  }
+  unsigned long long offset = elf->hdr->e_shoff +
+    (sizeof(Elf64_Shdr) * (shdr-1)) +
+    offsetof(Elf64_Shdr, sh_offset);
+  unsigned char* tmp_file = elf->bin;
+
+  tmp_file += offset;
+  memcpy(tmp_file, &new_val, sizeof(new_val));
+  
+  return 0;
+}
+
+int
+set_shdr_size(elf_bin_t* elf, unsigned int shdr, Elf64_Xword new_val) {
+  if (shdr > elf->hdr->e_shnum) {
+    return -1;
+  }
+  unsigned long long offset = elf->hdr->e_shoff +
+    (sizeof(Elf64_Shdr) * (shdr-1)) +
+    offsetof(Elf64_Shdr, sh_size);
+  unsigned char* tmp_file = elf->bin;
+
+  tmp_file += offset;
+  memcpy(tmp_file, &new_val, sizeof(new_val));
+  
+  return 0;
+}
+
+int
+set_shdr_link(elf_bin_t* elf, unsigned int shdr, Elf64_Word new_val) {
+  if (shdr > elf->hdr->e_shnum) {
+    return -1;
+  }
+  unsigned long long offset = elf->hdr->e_shoff +
+    (sizeof(Elf64_Shdr) * (shdr-1)) +
+    offsetof(Elf64_Shdr, sh_link);
+  unsigned char* tmp_file = elf->bin;
+
+  tmp_file += offset;
+  memcpy(tmp_file, &new_val, sizeof(new_val));
+  
+  return 0;
+}
+
+int
+set_shdr_info(elf_bin_t* elf, unsigned int shdr, Elf64_Word new_val) {
+  if (shdr > elf->hdr->e_shnum) {
+    return -1;
+  }
+  unsigned long long offset = elf->hdr->e_shoff +
+    (sizeof(Elf64_Shdr) * (shdr-1)) +
+    offsetof(Elf64_Shdr, sh_info);
+  unsigned char* tmp_file = elf->bin;
+
+  tmp_file += offset;
+  memcpy(tmp_file, &new_val, sizeof(new_val));
+  
+  return 0;
+}
+
+int
+set_shdr_addralign(elf_bin_t* elf, unsigned int shdr, Elf64_Xword new_val) {
+  if (shdr > elf->hdr->e_shnum) {
+    return -1;
+  }
+  unsigned long long offset = elf->hdr->e_shoff +
+    (sizeof(Elf64_Shdr) * (shdr-1)) +
+    offsetof(Elf64_Shdr, sh_addralign);
+  unsigned char* tmp_file = elf->bin;
+
+  tmp_file += offset;
+  memcpy(tmp_file, &new_val, sizeof(new_val));
+  
+  return 0;
+}
+
+int
+set_shdr_entsize(elf_bin_t* elf, unsigned int shdr, Elf64_Xword new_val) {
+  if (shdr > elf->hdr->e_shnum) {
+    return -1;
+  }
+  unsigned long long offset = elf->hdr->e_shoff +
+    (sizeof(Elf64_Shdr) * (shdr-1)) +
+    offsetof(Elf64_Shdr, sh_entsize);
+  unsigned char* tmp_file = elf->bin;
+
+  tmp_file += offset;
+  memcpy(tmp_file, &new_val, sizeof(new_val));
+  
+  return 0;
+}
+
 /*
  * Printers
  */
 void
 print_elf_header(elf_bin_t* bin) {
-  char* ehdr_type = calloc(1, 256);
-  get_ehdr_type_from_int(bin->hdr->e_type, ehdr_type);
+  char* ehdr_type = calloc(1, 48);
+  get_ehdr_type(bin->hdr->e_type, ehdr_type);
 
   printf("\nElf Header:\n");
   printf("===========================\n");
@@ -541,15 +749,15 @@ Shdr offset        Shdr size    Shdr num\n\
 void
 print_program_headers(elf_bin_t* bin) {
   Elf64_Phdr* tmp_phdr = bin->phdr;
-  char* phdr_str = calloc(1, 256);
-  char* perms_str = calloc(1, 256);
+  char* phdr_str = calloc(1, 48);
+  char* perms_str = calloc(1, 48);
 
   puts("Elf program headers");
   puts("===========================");
 
   for (int i = 0; i < bin->hdr->e_phnum; i++) {
-    get_phdr_type_from_int(tmp_phdr->p_type, phdr_str);
-    get_phdr_perms_from_int(tmp_phdr->p_flags, perms_str);
+    get_phdr_type(tmp_phdr->p_type, phdr_str);
+    get_phdr_perms(tmp_phdr->p_flags, perms_str);
 
     printf("Phdr %d\n", i+1);
     puts("--------");
@@ -570,23 +778,37 @@ Paddr              Filesz             Memsz              Align\n\
 }
 
 void
-print_section_headers(elf_bin_t* bin) {
-  Elf64_Shdr* tmp_shdr = bin->shdr;
+print_section_headers(elf_bin_t* elf) {
+  char* shdr_type = calloc(1, 48);
+  Elf64_Shdr* tmp_shdr = elf->shdr;
+  unsigned long long strtab_shdr_index = elf->hdr->e_shstrndx;
+  unsigned long long strtab_offset = elf->shdr[strtab_shdr_index].sh_offset;
+
+  unsigned char* shdr_name = elf->bin;
+  shdr_name += strtab_offset + 1;
 
   puts("Elf section headers");
   puts("===========================");
 
-  for (int i = 0; i < bin->hdr->e_shnum; i++) {
+  for (int i = 0; i < elf->hdr->e_shnum; i++) {
+    get_shdr_type(tmp_shdr->sh_type, shdr_type);
+    
     printf("Shdr %d\n", i+1);
     puts("--------");
     printf("\
+Name: %s\n\
 Addr:   0x%016llx\n\
 Offset: 0x%016llx\n\
-Name     Type     Flags            Size\n\
-%08d %08d %016llu %016llu\n\
-Link     Info     Addralign        Entry size\n\
-%08d %08d %016llu %016llu\n",
-     tmp_shdr->sh_addr, tmp_shdr->sh_offset, tmp_shdr->sh_name, tmp_shdr->sh_type, tmp_shdr->sh_flags, tmp_shdr->sh_size, tmp_shdr->sh_link, tmp_shdr->sh_info, tmp_shdr->sh_addralign, tmp_shdr->sh_entsize);
+Type         Flags            Size\n\
+%s %016llu %016llu\n\
+Link     Info         Addralign        Entry size\n\
+%08d %08d     %016llu %016llu\n",
+     shdr_name, tmp_shdr->sh_addr, tmp_shdr->sh_offset, shdr_type, tmp_shdr->sh_flags, tmp_shdr->sh_size, tmp_shdr->sh_link, tmp_shdr->sh_info, tmp_shdr->sh_addralign, tmp_shdr->sh_entsize);
+    
     tmp_shdr++;
+    *shdr_type = '\0';
+    shdr_name += strlen((const char*)shdr_name) + 1;
   }
+
+  free(shdr_type);
 }

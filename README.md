@@ -13,24 +13,7 @@ An example of parsing everything into an elf_bin_t struct:
 // Task: You need to parse the Elf header, program headers,
 // section headers, and sections for reading/writing
 
-struct stat stats;
-char* target_elf = "./target_elf";
-stat(target_elf, &stats);
-
-FILE* fp = fopen(target_elf, "r+b");
-unsigned char *elf = malloc(stats.st_size);
-fread(elf, stats.st_size, 1, fp);
-fclose(fp);
-
-// Everything above this comment is the minimum required to grab an
-// elf from disk. This is just an example, as there are many ways
-// to do this. These tasks will not be repeated in further examples
-
-elf_bin_t* parsed_elf = malloc(sizeof(elf_bin_t));
-parse_elf(elf, parsed_elf);
-
-// parsed_elf is now an elf_bin_t struct, which can be used to parse
-// the entire contents of the read in elf in a reasonable fashion
+elf_bin_t* parsed_elf = open_elf("./path/to/file");;
 ```
 
 An example of reading and referencing a particular program header:
@@ -38,31 +21,28 @@ An example of reading and referencing a particular program header:
 // Task: You need to read and reference the contents of program
 // headers
 
-elf_bin_t* parsed_elf = malloc(sizeof(elf_bin_t));
-parse_elf(elf, parsed_elf);
+elf_bin_t* parsed_elf = open_elf("./path/to/file");
 
 print_program_headers(parsed_elf);
 
-Elf64_Phdr* p = parsed_elf->phdr + (sizeof(Elf64_Phdr) * 10);
-printf("Value of the 'p_vaddr' field in the 11th program header: %016llx\n", p->p_vaddr);
+Elf64_Phdr* p = &(parsed_elf->phdr[3]);
+printf("Value of the 'p_vaddr' field in the 4th program header: %016llx\n", p->p_vaddr);
 ```
 
-An example of editing an elf's program headers (If you plan on editing and elf,
-you must keep the original unsigned char* raw elf around, since that is the object
-that is actually being edited):
-```
-// Task: You need to alter the value 'p_flags' field in the 3rd program header
+Note that all of the 'parse' functions should not be used independently.
 
-elf_bin_t* parsed_elf = malloc(sizeof(elf_bin_t));
-parse_elf(elf, parsed_elf);
+An example of editing an elf's program headers.
+```
+// Task: You need to alter the value the 'p_flags' field in the 3rd program header
+
+elf_bin_t* parsed_elf = open_elf("./path/to/file");
 
 Elf64_Word new_val = 0xffffff;
-set_phdr_flags(elf, parsed_elf, 3, new_val);
+set_phdr_flags(parsed_elf, 3, new_val);
 
-// The 'set' functions take the parsed elf and the original stream of bytes representing
-// the raw elf. It edits the original stream, which can them be written to disk, using
-// the following command. This creates a new file named 'elf.out' to avoid overwriting
-// the original elf that was parsed, in case you still need it
+// The 'set' functions write to the original byte-stream of the target elf. 
+// To actually make the changes, use the following function.
+// Note that the newly written binary will always be named 'elf.out'
 dump_elf(elf);
 ```
 
@@ -72,46 +52,59 @@ dump_elf(elf);
 /*
  * Utilities
  */
-static char* get_phdr_type_from_int(int);
-static char* get_phdr_perms_from_int(int);
-int dump_elf(unsigned char* file, long long len);
+int get_ehdr_type(int, char*); int get_phdr_type(int, char*);
+int get_phdr_perms(int, char*);
+int dump_elf(elf_bin_t* elf);
+elf_bin_t* open_elf(const char* target_elf);
 /*
  * Parsers
  */
-int parse_section_headers(unsigned char*, elf_bin_t*);
-int parse_program_headers(unsigned char*, elf_bin_t*);
-int parse_header(unsigned char*, elf_bin_t*);
-int parse_sections(unsigned char*, elf_bin_t*);
-int parse_elf(unsigned char*, elf_bin_t*);
+int parse_section_headers(elf_bin_t* elf);
+int parse_program_headers(elf_bin_t* elf);
+int parse_header(elf_bin_t*);
+int parse_sections(elf_bin_t*);
+int parse_elf(elf_bin_t* elf);
 /*
  * Setters
  */
 //hdr
-int set_hdr_type(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_machine(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_version(unsigned char* file, elf_bin_t* bin, Elf64_Word new_val);
-int set_hdr_entry(unsigned char* file, elf_bin_t* bin, Elf64_Addr new_val);
-int set_hdr_phoff(unsigned char* file, elf_bin_t* bin, Elf64_Off new_val);
-int set_hdr_shoff(unsigned char* file, elf_bin_t* bin, Elf64_Off new_val);
-int set_hdr_flags(unsigned char* file, elf_bin_t* bin, Elf64_Word new_val);
-int set_hdr_ehsize(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_phentsize(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_phnum(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_shentsize(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_shnum(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
-int set_hdr_shstrndx(unsigned char* file, elf_bin_t* bin, Elf64_Half new_val);
+int set_hdr_type(elf_bin_t* elf, Elf64_Half new_val);
+int set_hdr_machine(elf_bin_t* elf, Elf64_Half new_val);
+int set_hdr_version(elf_bin_t* elf, Elf64_Word new_val);
+int set_hdr_entry(elf_bin_t* elf, Elf64_Addr new_val);
+int set_hdr_phoff(elf_bin_t* elf, Elf64_Off new_val);
+int set_hdr_shoff(elf_bin_t* elf, Elf64_Off new_val);
+int set_hdr_flags(elf_bin_t* elf, Elf64_Word new_val);
+int set_hdr_ehsize(elf_bin_t* elf, Elf64_Half new_val);
+int set_hdr_phentsize(elf_bin_t* elf, Elf64_Half new_val);
+int set_hdr_phnum(elf_bin_t* elf, Elf64_Half new_val);
+int set_hdr_shentsize(elf_bin_t* elf, Elf64_Half new_val);
+int set_hdr_shnum(elf_bin_t* elf, Elf64_Half new_val);
+int set_hdr_shstrndx(elf_bin_t* elf, Elf64_Half new_val);
 // phdrs
-int set_phdr_type(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Word new_val);
-int set_phdr_flags(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Word new_val);
-int set_phdr_offset(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Off new_val);
-int set_phdr_vaddr(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Addr new_val);
-int set_phdr_paddr(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Addr new_val);
-int set_phdr_filesz(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val);
-int set_phdr_memsz(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val);
-int set_phdr_align(unsigned char* file, elf_bin_t* bin, unsigned int phdr, Elf64_Xword new_val);
+int set_phdr_type(elf_bin_t* elf, unsigned int phdr, Elf64_Word new_val);
+int set_phdr_flags(elf_bin_t* elf, unsigned int phdr, Elf64_Word new_val);
+int set_phdr_offset(elf_bin_t* elf, unsigned int phdr, Elf64_Off new_val);
+int set_phdr_vaddr(elf_bin_t* elf, unsigned int phdr, Elf64_Addr new_val);
+int set_phdr_paddr(elf_bin_t* elf, unsigned int phdr, Elf64_Addr new_val);
+int set_phdr_filesz(elf_bin_t* elf, unsigned int phdr, Elf64_Xword new_val);
+int set_phdr_memsz(elf_bin_t* elf, unsigned int phdr, Elf64_Xword new_val);
+int set_phdr_align(elf_bin_t* elf, unsigned int phdr, Elf64_Xword new_val);
+//shdrs
+int set_shdr_name(elf_bin_t* elf, unsigned int shdr, Elf64_Word new_val);
+int set_shdr_type(elf_bin_t* elf, unsigned int shdr, Elf64_Word new_val);
+int set_shdr_flags(elf_bin_t* elf, unsigned int shdr, Elf64_Xword new_val);
+int set_shdr_addr(elf_bin_t* elf, unsigned int shdr, Elf64_Addr new_val);
+int set_shdr_offset(elf_bin_t* elf, unsigned int shdr, Elf64_Off new_val);
+int set_shdr_size(elf_bin_t* elf, unsigned int shdr, Elf64_Xword new_val);
+int set_shdr_link(elf_bin_t* elf, unsigned int shdr, Elf64_Word new_val);
+int set_shdr_info(elf_bin_t* elf, unsigned int shdr, Elf64_Word new_val);
+int set_shdr_addralign(elf_bin_t* elf, unsigned int shdr, Elf64_Xword new_val);
+int set_shdr_entsize(elf_bin_t* elf, unsigned int shdr, Elf64_Xword new_val);
 /*
  * Printers
  */
 void print_elf_header(elf_bin_t*);
 void print_program_headers(elf_bin_t*);
+void print_section_headers(elf_bin_t*);
 ```
