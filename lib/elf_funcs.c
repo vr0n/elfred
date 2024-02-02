@@ -24,6 +24,117 @@ const char* OUT_NAME = "elf.out";
  * accounted for which are valid.
  */
 int
+get_ehdr_type(int type, char* type_str) {
+  int ret_val = -1;
+  int len = 8;
+  
+  switch(type) {
+    case ET_NONE:
+      memcpy(type_str, "ET_NONE\0", len);
+      break;
+    case ET_REL:
+      memcpy(type_str, "ET_REL \0", len);
+      break;
+    case ET_EXEC:
+      memcpy(type_str, "ET_EXEC\0", len);
+      break;
+    case ET_DYN:
+      memcpy(type_str, "ET_DYN \0", len);
+      break;
+    case ET_CORE:
+      memcpy(type_str, "ET_CORE\0", len);
+      break;
+    default:
+      memcpy(type_str, "UNKNOWN\0", len);
+      return ret_val;
+  }
+
+  ret_val = 0;
+  return ret_val;
+}
+
+int
+get_phdr_type(int phdr, char* type_str) {
+  int ret_val = -1;
+  int len = 16;
+  
+  switch(phdr) {
+    case PT_LOAD:
+      memcpy(type_str, "PT_LOAD        \0", len);
+      break;
+    case PT_DYNAMIC:
+      memcpy(type_str, "PT_DYNAMIC     \0", len);
+      break;
+    case PT_INTERP:
+      memcpy(type_str, "PT_INTERP      \0", len);
+      break;
+    case PT_NOTE:
+      memcpy(type_str, "PT_NOTE        \0", len);
+      break;
+    case PT_SHLIB:
+      memcpy(type_str, "PT_SHLIB       \0", len);
+      break;
+    case PT_PHDR:
+      memcpy(type_str, "PT_PHDR        \0", len);
+      break;
+    case PT_GNU_EH_FRAME:
+      memcpy(type_str, "PT_GNU_EH_FRAME\0", len);
+      break;
+    case PT_GNU_STACK:
+      memcpy(type_str, "PT_GNU_STACK   \0", len);
+      break;
+    case PT_GNU_RELRO:
+      memcpy(type_str, "PT_GNU_RELRO   \0", len);
+      break;
+    case PT_GNU_PROPERTY:
+      memcpy(type_str, "PT_GNU_PROPERTY\0", len);
+      break;
+    default:
+      memcpy(type_str, "PT_UNKNOWN     \0", len);
+      return ret_val;
+  }
+
+  ret_val = 0;
+  return ret_val;
+}
+
+int
+get_phdr_perms(int perms, char* perms_str) {
+  int ret_val = -1;
+  int len = 8;
+  
+  switch(perms) {
+    case 1:
+      memcpy(perms_str, "--X    \0", len);
+      break;
+    case 2:
+      memcpy(perms_str, "-W-    \0", len);
+      break;
+    case 3:
+      memcpy(perms_str, "-WX    \0", len);
+      break;
+    case 4:
+      memcpy(perms_str, "R--    \0", len);
+      break;
+    case 5:
+      memcpy(perms_str, "R-X    \0", len);
+      break;
+    case 6:
+      memcpy(perms_str, "RW-    \0", len);
+      break;
+    case 7:
+      memcpy(perms_str, "RWX    \0", len);
+      break;
+    default:
+      memcpy(perms_str, "UNKNOWN\0", len);
+      return ret_val;
+  }
+
+  ret_val = 0;
+  return ret_val;
+}
+
+int
 get_shdr_type(int type, char* type_str) {
   int ret_val = -1;
   int len = 13;
@@ -74,113 +185,32 @@ get_shdr_type(int type, char* type_str) {
 }
 
 int
-get_ehdr_type(int type, char* type_str) {
+find_section(elf_bin_t* elf, unsigned long long offset, int* sec_offset) {
   int ret_val = -1;
-  int len = 8;
+  Elf64_Half shnum = elf->hdr->e_shnum;
+  Elf64_Off sec_off = 0;
+  Elf64_Xword sec_size = 0;
   
-  switch(type) {
-    case ET_NONE:
-      memcpy(type_str, "ET_NONE\0", len);
-      break;
-    case ET_REL:
-      memcpy(type_str, "ET_REL \0", len);
-      break;
-    case ET_EXEC:
-      memcpy(type_str, "ET_EXEC\0", len);
-      break;
-    case ET_DYN:
-      memcpy(type_str, "ET_DYN \0", len);
-      break;
-    case ET_CORE:
-      memcpy(type_str, "ET_CORE\0", len);
-      break;
-    default:
-      memcpy(type_str, "UNKNOWN\0", len);
-      return ret_val;
+  for (int i = 0; i < shnum; i++) {
+    sec_off = elf->shdr[i].sh_offset;
+    sec_size = elf->shdr[i].sh_size;
+    
+    if (offset >= sec_off && offset <= (sec_off + sec_size)) {
+      if (elf->shdr[i].sh_name == elf->sections[i].sec_name) {
+        // If we are here, that means there has likely
+        // been no funny business with binary manipulation
+        // at this point.
+        *sec_offset = i;
+        
+        ret_val = 0;
+        goto end;
+      }
+      *sec_offset = -1;
+      goto end; // We found the section, but our elf_bin_t is broken
+    }
   }
-
-  ret_val = 0;
-  return ret_val;
-}
-
-int
-get_phdr_perms(int perms, char* perms_str) {
-  int ret_val = -1;
-  int len = 8;
   
-  switch(perms) {
-    case 1:
-      memcpy(perms_str, "--X    \0", len);
-      break;
-    case 2:
-      memcpy(perms_str, "-W-    \0", len);
-      break;
-    case 3:
-      memcpy(perms_str, "-WX    \0", len);
-      break;
-    case 4:
-      memcpy(perms_str, "R--    \0", len);
-      break;
-    case 5:
-      memcpy(perms_str, "R-X    \0", len);
-      break;
-    case 6:
-      memcpy(perms_str, "RW-    \0", len);
-      break;
-    case 7:
-      memcpy(perms_str, "RWX    \0", len);
-      break;
-    default:
-      memcpy(perms_str, "UNKNOWN\0", len);
-      return ret_val;
-  }
-
-  ret_val = 0;
-  return ret_val;
-}
-
-int
-get_phdr_type(int phdr, char* type_str) {
-  int ret_val = -1;
-  int len = 16;
-  
-  switch(phdr) {
-    case PT_LOAD:
-      memcpy(type_str, "PT_LOAD        \0", len);
-      break;
-    case PT_DYNAMIC:
-      memcpy(type_str, "PT_DYNAMIC     \0", len);
-      break;
-    case PT_INTERP:
-      memcpy(type_str, "PT_INTERP      \0", len);
-      break;
-    case PT_NOTE:
-      memcpy(type_str, "PT_NOTE        \0", len);
-      break;
-    case PT_SHLIB:
-      memcpy(type_str, "PT_SHLIB       \0", len);
-      break;
-    case PT_PHDR:
-      memcpy(type_str, "PT_PHDR        \0", len);
-      break;
-    case PT_GNU_EH_FRAME:
-      memcpy(type_str, "PT_GNU_EH_FRAME\0", len);
-      break;
-    case PT_GNU_STACK:
-      memcpy(type_str, "PT_GNU_STACK   \0", len);
-      break;
-    case PT_GNU_RELRO:
-      memcpy(type_str, "PT_GNU_RELRO   \0", len);
-      break;
-    case PT_GNU_PROPERTY:
-      memcpy(type_str, "PT_GNU_PROPERTY\0", len);
-      break;
-    default:
-      memcpy(type_str, "PT_UNKNOWN     \0", len);
-      return ret_val;
-  }
-
-  ret_val = 0;
+end:
   return ret_val;
 }
 
@@ -252,26 +282,6 @@ end:
 /*
  * Parsers
  */
-static int
-parse_elf(elf_bin_t* elf)
-{
-  int ret_val = -1;
-  
-  if (0 > (ret_val = parse_header(elf))){
-    goto end;
-  }
-  if (0 > (ret_val = parse_program_headers(elf))){
-    goto end;
-  }
-  if (0 > (ret_val = parse_section_headers(elf))){
-    goto end;
-  }
-  ret_val = parse_sections(elf);
-
-end:
-  return ret_val;
-}
-
 static int
 parse_header(elf_bin_t* elf)
 {
@@ -398,32 +408,22 @@ end:
   return ret_val;
 }
 
-int
-find_section(elf_bin_t* elf, unsigned long long offset, int* sec_offset) {
+static int
+parse_elf(elf_bin_t* elf)
+{
   int ret_val = -1;
-  Elf64_Half shnum = elf->hdr->e_shnum;
-  Elf64_Off sec_off = 0;
-  Elf64_Xword sec_size = 0;
   
-  for (int i = 0; i < shnum; i++) {
-    sec_off = elf->shdr[i].sh_offset;
-    sec_size = elf->shdr[i].sh_size;
-    
-    if (offset >= sec_off && offset <= (sec_off + sec_size)) {
-      if (elf->shdr[i].sh_name == elf->sections[i].sec_name) {
-        // If we are here, that means there has likely
-        // been no funny business with binary manipulation
-        // at this point.
-        *sec_offset = i;
-        
-        ret_val = 0;
-        goto end;
-      }
-      *sec_offset = -1;
-      goto end; // We found the section, but our elf_bin_t is broken
-    }
+  if (0 > (ret_val = parse_header(elf))){
+    goto end;
   }
-  
+  if (0 > (ret_val = parse_program_headers(elf))){
+    goto end;
+  }
+  if (0 > (ret_val = parse_section_headers(elf))){
+    goto end;
+  }
+  ret_val = parse_sections(elf);
+
 end:
   return ret_val;
 }
