@@ -302,14 +302,92 @@ parse_sections(elf_bin_t* elf)
   return 0;
 }
 
+int
+find_section(elf_bin_t* elf, unsigned long long offset, int* sec_offset) {
+  int ret_val = -1;
+  Elf64_Half shnum = elf->hdr->e_shnum;
+  Elf64_Off sec_off = 0;
+  Elf64_Xword sec_size = 0;
+  
+  for (int i = 0; i < shnum; i++) {
+    sec_off = elf->shdr[i].sh_offset;
+    sec_size = elf->shdr[i].sh_size;
+    
+    if (offset >= sec_off && offset <= (sec_off + sec_size)) {
+      if (elf->shdr[i].sh_name == elf->sections[i].sec_name) {
+        // If we are here, that means there has likely
+        // been no funny business with binary manipulation
+        // at this point.
+        *sec_offset = i;
+        
+        ret_val = 0;
+        break;
+      }
+      *sec_offset = -1;
+      break;
+    }
+  }
+  
+  return ret_val;
+}
+
 /*
  * Setters
  */
 int
-update_binary(elf_bin_t* elf, unsigned char* bytes, unsigned long long len, unsigned long long offset, int extend) {
-  if (offset > elf->size) { // We can't do this...
-    return -1;
+update_section(elf_bin_t* elf, unsigned char* bytes, unsigned long long len, unsigned int section, unsigned long long offset) {
+  int ret_val = -1;
+
+  int sec_off = -1;
+
+  // We have to know what section we are in.
+  find_section(elf, offset, &sec_off);
+  Elf64_Shdr* orig_shdr = &(elf->shdr[sec_off]); 
+  Elf64_Sec* orig_sec = &(elf->sections[sec_off]); 
+
+  // Now that we have it, we can start building the replacements
+  Elf64_Shdr* new_shdr = calloc(1, sizeof(Elf64_Shdr));
+  Elf64_Sec* new_sec = calloc(1, sizeof(Elf64_Sec));
+  
+  // Copy the header so we only update the parts we need
+  memcpy(new_shdr, orig_shdr, sizeof(Elf64_Shdr));
+  
+  // Prepare the new section
+  new_sec->sec_name = new_shdr->sh_name;
+  new_sec->sec_data = calloc(1, new_shdr->sh_size + len);
+
+  // Update the relevant parts of the binary details
+  new_shdr->sh_size += len;
+  elf->size += len;
+
+  for (int i = sec_off; i < elf->hdr->e_shnum; i++) {
+    elf->shdr[i].sh_offset += len;
   }
+
+  // Here we go!
+  memcpy(new_sec->sec_data, orig_sec->sec_data, offset);
+  memcpy(new_sec->sec_data + offset, bytes, len);
+  memcpy(new_sec->sec_data + (offset + len),
+         orig_sec->sec_data + (offset + len),
+         orig_shdr->sh_size - (offset - len));
+
+  // Clean up
+  elf->shdr[sec_off] = *new_shdr;
+  elf->sections[sec_off] = *new_sec;
+  free(new_shdr);
+  free(new_sec);
+
+  return ret_val;
+}
+
+int
+update_binary(elf_bin_t* elf, unsigned char* bytes, unsigned long long len, unsigned long long offset, int extend) {
+  int ret_val = -1;
+  if (offset > elf->size) { // We can't do this...
+    ret_val = -1;
+    goto end;
+  }
+
 
   /*
    * Instead of erroring, we assume that if the offset
@@ -321,21 +399,40 @@ update_binary(elf_bin_t* elf, unsigned char* bytes, unsigned long long len, unsi
    * writes don't cross section boundaries unless you 
    * explicity set the extend flag.
    */
+  unsigned long long new_size = -1;
   if (((offset + len) > elf->size) || extend) {
-    
+    new_size = elf->size + len;
   } else {
-    unsigned char* bin = calloc(1, elf->size);
+    new_size = elf->size;
+  }
+  
+  unsigned char* bin = calloc(1, new_size);
+  
+  if (offset == elf->size) {
+    memcpy(bin, elf->bin, elf->size);
+    memcpy(bin + elf->size, bytes, len);
+    elf->size = elf->size + len;
+  } else {
+    printf("we are here 1\n");
     memcpy(bin, elf->bin, offset); // First portion
+    printf("we are here 2\n");
     memcpy(bin + offset, bytes, len); // Middle portion
+    printf("we are here 3\n");
     memcpy(bin + (offset + len),
            elf->bin + (offset + len),
            elf->size - (offset - len)); // Final portion
-
-    free(elf->bin);
-    elf->bin = bin;
   }
   
-  return 0;
+  printf("we are here 4\n");
+  free(elf->bin);
+  elf->bin = bin;
+  printf("we are here 5\n");
+  printf("we are here 6\n");
+
+  ret_val = 0;
+  
+end:
+  return ret_val;
 }
 int
 set_hdr_type(elf_bin_t* elf, Elf64_Half new_val) {
