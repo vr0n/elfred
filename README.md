@@ -10,7 +10,7 @@ Some examples:
 
 ## Open And Prepare An Elf For Parsing/Editing
 
-```
+```c
 elf_bin_t* elf = open_elf("./path/to/file");;
 ```
 
