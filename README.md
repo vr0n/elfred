@@ -16,7 +16,7 @@ elf_bin_t* elf = open_elf("./path/to/file");;
 
 ## Read And Reference Program Headers
 
-```
+```c
 elf_bin_t* elf = open_elf("./path/to/file");
 
 print_program_headers(elf);
@@ -32,7 +32,7 @@ program or sections headers.
 
 ## Edit The Third Program Header
 
-```
+```c
 elf_bin_t* elf = open_elf("./path/to/file");
 
 Elf64_Word new_val = 0xffffff;
@@ -51,7 +51,7 @@ In this example, assume your target is a simple "Hello, World!" program and you
 know in advance that the string "Hello, World!" is stored at offset 0x2004 in your 
 target.
 
-```
+```c
 elf_bin_t* elf = open_elf("./path/to/file");
 
 unsigned long long len = 12;
@@ -75,7 +75,7 @@ how the technique works to explain why some of the changes are required. A simpl
 web search should explain this, but I will try to add some comments to make the 
 invisible steps more visible
 
-```
+```c
 /*
  * Shellcode that checks if the program is being run as UID 0 
  * and then jumps back to the original entry point. 
@@ -149,7 +149,7 @@ we are able to do a PT_NOTE->PT_LOAD injection in fewer than 20 lines of code.
 
 # Available Methods
 
-```
+```c
 /*
  * Utilities
  */
