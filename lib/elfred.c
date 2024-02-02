@@ -8,8 +8,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "elf_funcs.h"
-#include "utils.h"
+#include "elfred.h"
 
 const char* OUT_NAME = "elf.out";
 
