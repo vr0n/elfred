@@ -26,7 +26,7 @@ printf("Value of the 'p_vaddr' field in the 4th program header: %016llx\n", p.p_
 ```
 
 The `print_*` functions included with Ælfred are just examples that are intended to
-be used if you don't care or need a specific format of the output. They are not 
+be used if you don't care or don't need a specific format of the output. They are not 
 formatted in a pretty or easily readable way, especially if there are several 
 program or sections headers. 
 
@@ -56,7 +56,7 @@ elf_bin_t* elf = open_elf("./path/to/file");
 
 unsigned long long len = 12;
 unsigned char* bytes = calloc(1, len);
-memcpy(bytes, "Goodbyte, all", len);
+memcpy(bytes, "Goodbye, all", len);
 update_binary(elf, bytes, len, 0x2004, 0);
 
 dump_elf(elf);
