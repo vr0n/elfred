@@ -135,19 +135,19 @@ static int parse_elf(elf_bin_t* elf);
  */
 int update_binary(elf_bin_t* elf, unsigned char* bytes, unsigned long long len, unsigned long long offset, int extend);
 //hdr
-int set_hdr_type(elf_bin_t* elf, Elf64_Half new_val);
-int set_hdr_machine(elf_bin_t* elf, Elf64_Half new_val);
-int set_hdr_version(elf_bin_t* elf, Elf64_Word new_val);
-int set_hdr_entry(elf_bin_t* elf, Elf64_Addr new_val);
-int set_hdr_phoff(elf_bin_t* elf, Elf64_Off new_val);
-int set_hdr_shoff(elf_bin_t* elf, Elf64_Off new_val);
-int set_hdr_flags(elf_bin_t* elf, Elf64_Word new_val);
-int set_hdr_ehsize(elf_bin_t* elf, Elf64_Half new_val);
-int set_hdr_phentsize(elf_bin_t* elf, Elf64_Half new_val);
-int set_hdr_phnum(elf_bin_t* elf, Elf64_Half new_val);
-int set_hdr_shentsize(elf_bin_t* elf, Elf64_Half new_val);
-int set_hdr_shnum(elf_bin_t* elf, Elf64_Half new_val);
-int set_hdr_shstrndx(elf_bin_t* elf, Elf64_Half new_val);
+void set_hdr_type(elf_bin_t* elf, Elf64_Half new_val);
+void set_hdr_machine(elf_bin_t* elf, Elf64_Half new_val);
+void set_hdr_version(elf_bin_t* elf, Elf64_Word new_val);
+void set_hdr_entry(elf_bin_t* elf, Elf64_Addr new_val);
+void set_hdr_phoff(elf_bin_t* elf, Elf64_Off new_val);
+void set_hdr_shoff(elf_bin_t* elf, Elf64_Off new_val);
+void set_hdr_flags(elf_bin_t* elf, Elf64_Word new_val);
+void set_hdr_ehsize(elf_bin_t* elf, Elf64_Half new_val);
+void set_hdr_phentsize(elf_bin_t* elf, Elf64_Half new_val);
+void set_hdr_phnum(elf_bin_t* elf, Elf64_Half new_val);
+void set_hdr_shentsize(elf_bin_t* elf, Elf64_Half new_val);
+void set_hdr_shnum(elf_bin_t* elf, Elf64_Half new_val);
+void set_hdr_shstrndx(elf_bin_t* elf, Elf64_Half new_val);
 // phdrs
 int set_phdr_type(elf_bin_t* elf, unsigned int phdr, Elf64_Word new_val);
 int set_phdr_flags(elf_bin_t* elf, unsigned int phdr, Elf64_Word new_val);
@@ -171,6 +171,6 @@ int set_shdr_entsize(elf_bin_t* elf, unsigned int shdr, Elf64_Xword new_val);
 /*
  * Printers
  */
-void print_elf_header(elf_bin_t*);
-void print_program_headers(elf_bin_t*);
-void print_section_headers(elf_bin_t*);
+int print_elf_header(elf_bin_t*);
+int print_program_headers(elf_bin_t*);
+int print_section_headers(elf_bin_t*);
