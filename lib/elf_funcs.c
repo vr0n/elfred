@@ -239,11 +239,11 @@ open_elf(const char* target_file) {
     goto end_free;
   }
   
-  if (elf->size != fread(elf->bin, elf->size, 1, fp)) {
+  if (elf->size != fread(elf->bin, 1, elf->size, fp)) {
     goto end_close;
   }
   
-  if (0 > parse_elf(elf)) {
+  if (0 == parse_elf(elf)) {
     fclose(fp);
     goto end;
   }
