@@ -91,6 +91,8 @@ typedef struct {
 } Elf64_Shdr; // 64 bytes
 
 typedef struct {
+  Elf64_Word sec_name;
+  unsigned char* sec_data;
 } Elf64_Sec;
 
 typedef struct {
@@ -110,6 +112,7 @@ typedef struct elf_bin {
   char* perms_chr;
   unsigned long long size;
   unsigned char* bin;
+  Elf64_Sec* sections;
 } elf_bin_t;
 
 /*
@@ -125,11 +128,12 @@ elf_bin_t* open_elf(const char* target_elf);
 static int parse_section_headers(elf_bin_t* elf);
 static int parse_program_headers(elf_bin_t* elf);
 static int parse_header(elf_bin_t*);
-static int parse_sections(elf_bin_t*);
+static int parse_sections(elf_bin_t* elf);
 static int parse_elf(elf_bin_t* elf);
 /*
  * Setters
  */
+int update_binary(elf_bin_t* elf, unsigned char* bytes, unsigned long long len, unsigned long long offset, int extend);
 //hdr
 int set_hdr_type(elf_bin_t* elf, Elf64_Half new_val);
 int set_hdr_machine(elf_bin_t* elf, Elf64_Half new_val);

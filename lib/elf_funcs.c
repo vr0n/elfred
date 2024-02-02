@@ -209,12 +209,6 @@ dump_elf(elf_bin_t* elf) {
  * Parsers
  */
 static int
-parse_sections(elf_bin_t* bin)
-{
-  return 0;
-}
-
-static int
 parse_elf(elf_bin_t* elf)
 {
   parse_header(elf);
@@ -258,7 +252,7 @@ static int
 parse_section_headers(elf_bin_t* elf)
 {
   unsigned short shnum = elf->hdr->e_shnum;
-  elf->shdr = (Elf64_Shdr*)malloc(sizeof(Elf64_Shdr) * shnum);
+  elf->shdr = (Elf64_Shdr*)calloc(1, sizeof(Elf64_Shdr) * shnum);
 
   unsigned char* tmp_file = elf->bin;
   tmp_file = tmp_file + elf->hdr->e_shoff;
@@ -272,8 +266,77 @@ parse_section_headers(elf_bin_t* elf)
 }
 
 /*
+ * The only feasible way to quickly edit an ELF, in my opinion
+ * is to parse each section individually so we can concatenate
+ * them after edits are made.
+ *
+ * This isn't a problem unless we are crossing section boundaries
+ * or extending the file.
+ */
+static int
+parse_sections(elf_bin_t* elf)
+{
+  unsigned long long shnum = elf->hdr->e_shnum;
+  elf->sections = (Elf64_Sec*)calloc(1, sizeof(Elf64_Sec) * shnum);
+  Elf64_Sec* sec = elf->sections;
+  Elf64_Shdr* shdr = elf->shdr;
+  Elf64_Off off = 0;
+  Elf64_Off size = 0;
+
+  unsigned char* tmp_file = elf->bin;
+  
+  for (int i = 0; i < shnum; i++) {
+    off = shdr->sh_offset;
+    size = shdr->sh_size;
+    tmp_file += off;
+    
+    sec->sec_name = shdr->sh_name;
+    sec->sec_data = (unsigned char*)calloc(1, size);
+    memcpy(sec->sec_data, tmp_file, size);
+    
+    shdr++;
+    sec++;
+    tmp_file = elf->bin;
+  }
+  
+  return 0;
+}
+
+/*
  * Setters
  */
+int
+update_binary(elf_bin_t* elf, unsigned char* bytes, unsigned long long len, unsigned long long offset, int extend) {
+  if (offset > elf->size) { // We can't do this...
+    return -1;
+  }
+
+  /*
+   * Instead of erroring, we assume that if the offset
+   * is within the bounds of the binary, but the length
+   * of bytes makes it exceed the size of the binary, 
+   * we just expand the binary.
+   *
+   * For now, it is your responsibility to ensure your
+   * writes don't cross section boundaries unless you 
+   * explicity set the extend flag.
+   */
+  if (((offset + len) > elf->size) || extend) {
+    
+  } else {
+    unsigned char* bin = calloc(1, elf->size);
+    memcpy(bin, elf->bin, offset); // First portion
+    memcpy(bin + offset, bytes, len); // Middle portion
+    memcpy(bin + (offset + len),
+           elf->bin + (offset + len),
+           elf->size - (offset - len)); // Final portion
+
+    free(elf->bin);
+    elf->bin = bin;
+  }
+  
+  return 0;
+}
 int
 set_hdr_type(elf_bin_t* elf, Elf64_Half new_val) {
     size_t offset = offsetof(Elf64_Ehdr, e_type);
@@ -781,11 +844,10 @@ void
 print_section_headers(elf_bin_t* elf) {
   char* shdr_type = calloc(1, 48);
   Elf64_Shdr* tmp_shdr = elf->shdr;
-  unsigned long long strtab_shdr_index = elf->hdr->e_shstrndx;
-  unsigned long long strtab_offset = elf->shdr[strtab_shdr_index].sh_offset;
+  unsigned long long strtab_index = elf->hdr->e_shstrndx;
+  unsigned long long strtab_offset = elf->shdr[strtab_index].sh_offset;
 
-  unsigned char* shdr_name = elf->bin;
-  shdr_name += strtab_offset + 1;
+  char* strtab = (char*)(elf->bin + strtab_offset);
 
   puts("Elf section headers");
   puts("===========================");
@@ -793,9 +855,7 @@ print_section_headers(elf_bin_t* elf) {
   for (int i = 0; i < elf->hdr->e_shnum; i++) {
     get_shdr_type(tmp_shdr->sh_type, shdr_type);
     
-    printf("Shdr %d\n", i+1);
-    puts("--------");
-    printf("\
+    printf("\n\
 Name: %s\n\
 Addr:   0x%016llx\n\
 Offset: 0x%016llx\n\
@@ -803,11 +863,14 @@ Type         Flags            Size\n\
 %s %016llu %016llu\n\
 Link     Info         Addralign        Entry size\n\
 %08d %08d     %016llu %016llu\n",
-     shdr_name, tmp_shdr->sh_addr, tmp_shdr->sh_offset, shdr_type, tmp_shdr->sh_flags, tmp_shdr->sh_size, tmp_shdr->sh_link, tmp_shdr->sh_info, tmp_shdr->sh_addralign, tmp_shdr->sh_entsize);
+      strtab + tmp_shdr->sh_name,
+      tmp_shdr->sh_addr,
+      tmp_shdr->sh_offset,
+      shdr_type, tmp_shdr->sh_flags, tmp_shdr->sh_size,
+      tmp_shdr->sh_link, tmp_shdr->sh_info, tmp_shdr->sh_addralign, tmp_shdr->sh_entsize);
     
     tmp_shdr++;
     *shdr_type = '\0';
-    shdr_name += strlen((const char*)shdr_name) + 1;
   }
 
   free(shdr_type);
