@@ -22,6 +22,54 @@ const char* OUT_NAME = "elf.out";
  * possible there are OS/machine specific values we have not 
  * accounted for which are valid.
  */
+static int
+rebuild_bin(elf_bin_t* elf) {
+  int ret_val = -1;
+
+  free(elf->bin); // Get rid of the old bin
+  elf->bin = NULL;
+
+  elf->bin = calloc(1, elf->size); // Size should be correct at this point
+  if (NULL == elf->bin) {
+    goto end;
+  }
+
+  /*
+   * To rebuild the bin, we need to:
+   *
+   * 1. Place the ELF header
+   * 2. Place the Program header 
+   * 3. Place the sections
+   * 4. Place the Section header 
+   */
+
+  unsigned char* tmp_bin = elf->bin;
+  
+  memcpy(tmp_bin, elf->hdr, sizeof(Elf64_Ehdr)); // Step 1
+  tmp_bin += sizeof(Elf64_Ehdr);
+  
+  for (int i = 0; i < elf->hdr->e_phnum; i++) {
+    memcpy(tmp_bin, &(elf->phdr[i]), sizeof(Elf64_Phdr)); // Step 2
+    tmp_bin += sizeof(Elf64_Phdr);
+  }
+  
+  for (int i = 0; i < elf->hdr->e_shnum; i++) {
+    memcpy(tmp_bin, &(elf->sections[i]), elf->shdr[i].sh_size); // Step 1
+    tmp_bin += elf->shdr[i].sh_size;
+  }
+  
+  for (int i = 0; i < elf->hdr->e_shnum; i++) {
+    memcpy(tmp_bin, &(elf->shdr[i]), sizeof(Elf64_Shdr)); // Step 1
+    tmp_bin += sizeof(Elf64_Shdr);
+  }
+  
+  tmp_bin = NULL;
+  
+  ret_val = 0;
+end:
+  return ret_val;
+}
+
 int
 get_ehdr_type(int type, char* type_str) {
   int ret_val = -1;
@@ -431,7 +479,7 @@ end:
  * Setters
  */
 int
-update_section(elf_bin_t* elf, unsigned char* bytes, unsigned long long len, unsigned int section, unsigned long long offset) {
+update_section(elf_bin_t* elf, unsigned char* bytes, unsigned long long len, unsigned long long offset) {
   int ret_val = -1;
   int sec_off = -1;
   Elf64_Shdr* new_shdr = NULL;
@@ -493,6 +541,9 @@ end_free:
     free(new_shdr);
   }
   if (NULL != new_sec) {
+    if (NULL != new_sec->sec_data) {
+      free(new_sec->sec_data);
+    }
     free(new_sec);
   }
 end:

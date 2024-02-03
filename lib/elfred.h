@@ -100,13 +100,9 @@ typedef struct {
 
 typedef struct elf_bin {
   Elf64_Ehdr* hdr;
-  unsigned int phdr_num;
   Elf64_Phdr* phdr;
-  unsigned int shdr_num;
   Elf64_Shdr* shdr;
-  unsigned int sec_num;
   Elf64_Sec* sec;
-  unsigned int seg_num;
   Elf64_Seg* seg;
   unsigned long perms;
   char* perms_chr;
@@ -136,7 +132,7 @@ static int parse_elf(elf_bin_t* elf);
 /*
  * Setters
  */
-int update_section(elf_bin_t* elf, unsigned char* bytes, unsigned long long len, unsigned int section, unsigned long long offset);
+int update_section(elf_bin_t* elf, unsigned char* bytes, unsigned long long len, unsigned long long offset);
 int update_binary(elf_bin_t* elf, unsigned char* bytes, unsigned long long len, unsigned long long offset, int extend);
 //hdr
 void set_hdr_type(elf_bin_t* elf, Elf64_Half new_val);
