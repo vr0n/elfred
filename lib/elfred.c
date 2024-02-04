@@ -1026,7 +1026,7 @@ print_elf_header(elf_bin_t* bin) {
     printf("%.2x ", bin->hdr->e_ident[i]);
   }
 
-  printf("\nEntry: 0x%016llx\n", bin->hdr->e_entry);
+  printf("\nEntry: 0x%016lx\n", bin->hdr->e_entry);
 
   printf("\
 Header Size        Obj type     Obj version\n\
@@ -1040,12 +1040,12 @@ Machine            Proc flags   Strtab index\n\
 
   printf("\
 Phdr offset        Phdr size    Phdr num\n\
-0x%016llx %08d     %08d\n",
+0x%016lx %08d     %08d\n",
     bin->hdr->e_phoff, bin->hdr->e_phentsize, bin->hdr->e_phnum);
 
   printf("\
 Shdr offset        Shdr size    Shdr num\n\
-0x%016llx %08d     %08d\n",
+0x%016lx %08d     %08d\n",
     bin->hdr->e_shoff, bin->hdr->e_shentsize, bin->hdr->e_shnum);
 
   free(ehdr_type);
@@ -1081,9 +1081,9 @@ print_program_headers(elf_bin_t* bin) {
     puts("--------");
     printf("\
 Type               Perms              Offset             Vaddr\n\
-%s    %s            0x%016llx 0x%016llx\n\
+%s    %s            0x%016lx 0x%016lx\n\
 Paddr              Filesz             Memsz              Align\n\
-0x%016llx 0x%016llx 0x%016llx 0x%016llx\n\n",
+0x%016lx 0x%016lx 0x%016lx 0x%016lx\n\n",
     phdr_str, perms_str, tmp_phdr->p_offset, tmp_phdr->p_vaddr, tmp_phdr->p_paddr, tmp_phdr->p_filesz, tmp_phdr->p_memsz, tmp_phdr->p_align);
 
     tmp_phdr++;
@@ -1121,12 +1121,12 @@ print_section_headers(elf_bin_t* elf) {
     
     printf("\n\
 Name: %s\n\
-Addr:   0x%016llx\n\
-Offset: 0x%016llx\n\
+Addr:   0x%016lx\n\
+Offset: 0x%016lx\n\
 Type         Flags            Size\n\
-%s %016llu %016llu\n\
+%s %016lu %016lu\n\
 Link     Info         Addralign        Entry size\n\
-%08d %08d     %016llu %016llu\n",
+%08d %08d     %016lu %016lu\n",
       strtab + tmp_shdr->sh_name,
       tmp_shdr->sh_addr,
       tmp_shdr->sh_offset,
