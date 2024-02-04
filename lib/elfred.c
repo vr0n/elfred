@@ -133,9 +133,6 @@ get_phdr_type(int phdr, char* type_str) {
     case PT_GNU_RELRO:
       memcpy(type_str, "PT_GNU_RELRO   \0", len);
       break;
-    case PT_GNU_PROPERTY:
-      memcpy(type_str, "PT_GNU_PROPERTY\0", len);
-      break;
     default:
       memcpy(type_str, "PT_UNKNOWN     \0", len);
       return ret_val;
